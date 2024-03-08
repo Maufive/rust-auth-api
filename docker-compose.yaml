@@ -2,18 +2,24 @@ version: "3.9"
 
 services:
   rustapp:
-    container_name: rustapp
+    container_name: auth-endpoint
     image: niklasalbinsson/auth-endpoint:1.0.0
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        DATABASE_URL: postgres://myuser:mypassword@db:5432/mydatabase
+    env_file:
+      - .env
     ports:
       - "8080:8080"
     depends_on:
       - db
-
+  pgAdmin:
+    image: dpage/pgadmin4
+    container_name: pgAdmin
+    env_file:
+      - ./.env
+    ports:
+      - "5050:80"
   db:
     container_name: db
     image: postgres:15-alpine
@@ -23,6 +29,5 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-
 volumes:
   pgdata: {}

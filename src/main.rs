@@ -23,8 +23,6 @@ async fn main() {
     dotenv().ok();
     println!("🦀 REST API Service 🦀");
 
-    tracing_subscriber::fmt::init();
-
     let config = Config::init();
 
     let connection_pool = PgPoolOptions::new()
@@ -32,9 +30,6 @@ async fn main() {
         .acquire_timeout(Duration::from_secs(5))
         .connect(&config.database_url).await
         .expect("Failed to connect to Postgres");
-
-    // Print the db url to the terminal
-    println!("Database URL: {}", &config.database_url);
 
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap()) // Allow requests from the frontend. TODO: Change this to the frontend URL
@@ -46,9 +41,9 @@ async fn main() {
         Arc::new(AppState { db: connection_pool.clone(), env: config.clone() })
     ).layer(cors);
 
-    println!("🚀 Server started at 0.0.0.0:8000");
+    println!("🚀 Server started at 0.0.0.0:8080");
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
 
     serve(listener, app).await.unwrap();
 }
