@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
+use argon2::{ password_hash::SaltString, Argon2, PasswordHasher };
 use axum::{ extract::{ Path, State }, http::StatusCode, response::IntoResponse, Json };
 use serde_json::json;
 use uuid::Uuid;
+use rand_core::OsRng;
 
 use crate::{ users::UserResponse, AppState };
 
@@ -27,12 +29,28 @@ pub async fn create_user_handler(
 
     println!("Creating user properties: {:?}", &body);
 
+    let salt = SaltString::generate(&mut OsRng);
+    let hashed_password = Argon2::default()
+        .hash_password(&body.password.as_bytes(), &salt)
+        .map_err(|e| {
+            let error_response =
+                serde_json::json!({
+                "status": "error",
+                "message": format!("Error while hashing password: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })
+        .map(|hash| hash.to_string())?;
+
     let query_result = sqlx
-        ::query(r#"INSERT INTO users (id, first_name, last_name, email) VALUES ($1, $2, $3, $4)"#)
+        ::query(
+            r#"INSERT INTO users (id, first_name, last_name, email, password) VALUES ($1, $2, $3, $4, $5)"#
+        )
         .bind(&id)
         .bind(&body.first_name)
         .bind(&body.last_name)
         .bind(&body.email)
+        .bind(hashed_password)
         .execute(&data.db).await
         .map_err(|err: sqlx::Error| err.to_string());
 
@@ -241,6 +259,7 @@ fn map_user_to_response(user: &User) -> UserResponse {
         first_name: user.first_name.to_owned(),
         last_name: user.last_name.to_owned(),
         email: user.email.to_owned(),
+        role: user.role.to_owned(),
         created_at: user.created_at.to_owned(),
         updated_at: user.updated_at.to_owned(),
     }

@@ -1,11 +1,14 @@
 use serde::{ Deserialize, Serialize };
 
+use super::model::UserRole;
+
 // Create
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateUserSchema {
     pub first_name: String,
     pub last_name: String,
     pub email: String,
+    pub password: String,
 }
 
 // Update
@@ -14,6 +17,8 @@ pub struct UpdateUserSchema {
     pub first_name: String,
     pub last_name: String,
     pub email: String,
+    pub password: String,
+    pub role: UserRole,
 }
 
 // Read/Delete

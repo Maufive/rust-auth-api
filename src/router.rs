@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
-use axum::{ routing::{ get, post }, Router };
+use axum::{ middleware, routing::{ get, post }, Router };
 
 use crate::{
+    auth::{ authenticate_jwt, login_user_handler, logout_handler },
     users::{
         create_user_handler,
         delete_user_handler,
@@ -22,6 +23,13 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(
             "/api/users/:id",
             get(get_user_handler).delete(delete_user_handler).patch(update_user_handler)
+        )
+        .route("/api/auth/login", post(login_user_handler))
+        .route(
+            "/api/auth/logout",
+            get(logout_handler).route_layer(
+                middleware::from_fn_with_state(app_state.clone(), authenticate_jwt)
+            )
         )
         .with_state(app_state)
 }
