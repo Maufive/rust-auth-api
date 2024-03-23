@@ -1,6 +1,6 @@
 mod handlers;
 pub use handlers::{
-    create_user_handler,
+    signup,
     delete_user_handler,
     get_all_users_handler,
     get_user_handler,
